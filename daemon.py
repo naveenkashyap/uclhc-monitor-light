@@ -13,6 +13,9 @@ import time
 import json
 import sys
 import re
+import os.path
+import threading
+import logging
 
 DEBUG_PRINT = True
 
@@ -146,7 +149,6 @@ class NetworkManager(object):
     @staticmethod
     def http_connect(url, data = False):
         """opens url, passing data and returns response. May throw network errors"""
-        # TODO Changes made
         method = "POST"
         opener = urllib2.build_opener()
         if data:
@@ -871,7 +873,7 @@ class Config(object):
     JSON_FIELD_DATABASE_URL = "DATABASE URL"
     JSON_VALUE_DATABASE_URL_EMPTY = "enter the database's domain here"
 
-    JSON_FIELD_COLLECTOR_ADDRESS = "COLLECTOR ADDRESS"
+    JSON_FIELD_COLLECTOR_ADDRESSES = "COLLECTOR ADDRESSES"
     JSON_VALUE_COLLECTOR_ADDRESS_LOCAL = "LOCAL"
 
     JSON_FIELD_JOB_CONSTRAINT = "JOB CONSTRAINT"
@@ -907,7 +909,9 @@ class Config(object):
             self.bin_duration = j[Config.JSON_FIELD_BIN_DURATION]
             self.database_url = j[Config.JSON_FIELD_DATABASE_URL]
             self.initial_values = j[Config.JSON_FIELD_INIT_VALUES]
-            self.collector_address = j[Config.JSON_FIELD_COLLECTOR_ADDRESS]
+            self.collector_addresses = j[Config.JSON_FIELD_COLLECTOR_ADDRESSES]
+            if not isinstance(self.collector_addresses, list):
+                self.collector_addresses = [self.collector_addresses]
             self.constraint = j[Config.JSON_FIELD_JOB_CONSTRAINT]
             self.node_renames = j[Config.JSON_FIELD_BATCH_JOB_SITE_NAME_MAP]
             self.influx_username = j[Config.JSON_FIELD_INFLUX_USERNAME]
@@ -926,7 +930,7 @@ class Config(object):
                 Config.JSON_FIELD_BIN_DURATION: self.bin_duration,
                 Config.JSON_FIELD_DATABASE_URL: self.database_url,
                 Config.JSON_FIELD_INIT_VALUES: self.initial_values,
-                Config.JSON_FIELD_COLLECTOR_ADDRESS: self.collector_address,
+                Config.JSON_FIELD_COLLECTOR_ADDRESSES: self.collector_addresses,
                 Config.JSON_FIELD_JOB_CONSTRAINT: self.constraint,
                 Config.JSON_FIELD_BATCH_JOB_SITE_NAME_MAP: self.node_renames,
                 Config.JSON_FIELD_INFLUX_USERNAME: self.influx_username,
@@ -1269,7 +1273,26 @@ class IdlePerSubmitMetric:
 def debug_print(msg):
     """prints msg only if the daemon is in debug mode (DEBUG_PRINT is True)"""
     if DEBUG_PRINT:
-        print msg
+        log = logging.getLogger(threading.current_thread().name.split(":")[0])
+        log.debug(msg)
+"""
+        try:
+            file_name = threading.current_thread().name.split(":")[0]
+            log_file = os.path.dirname(os.path.abspath('__file__')) + "/logs/" + file_name + ".log"
+            fo = open(log_file, 'a')
+            fo.write(msg+ "\n")
+            fo.close()
+        except IOError as e:
+            print e
+            print "Continuing without logging"
+            set_debug(False)
+"""
+
+def set_debug(b=False):
+    if b is not False:
+        DEBUG_PRINT = True
+    else:
+        DEBUG_PRINT = False
 
 
 def prettify(object):
@@ -1280,11 +1303,30 @@ def prettify(object):
         return str(object)
 
 
+
 def main():
 
     # load contextual files
     metricmngr = MetricManager()
     config = Config()
+    for address in config.collector_addresses:
+        config.collector_address = address
+        t = threading.Thread(target=run, args=(metricmngr, config,))
+        t.name = address
+        t.start()
+
+def run(metricmngr, config):
+    print("Starting thread for: {thread}".format(thread=threading.current_thread().name))
+    file_name = threading.current_thread().name.split(":")[0]
+    log_file = os.path.dirname(os.path.abspath('__file__')) + "/logs/" + file_name + ".log"
+    log = logging.getLogger(file_name)
+    log.setLevel(logging.DEBUG)
+    filehandler = logging.FileHandler(log_file)
+    filehandler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    filehandler.setFormatter(formatter)
+    log.addHandler(filehandler)
+    
     cache = Cache(config)
     condor = Condor(config)
     outbox = Outbox(config)
@@ -1316,4 +1358,6 @@ def main():
     # cache any required fields
     Cache.save_time_and_running_values(final_bin_end_time, jobs, metricmngr.get_fields_to_cache())
 
-main()
+if __name__ == "__main__":
+    main()
+
