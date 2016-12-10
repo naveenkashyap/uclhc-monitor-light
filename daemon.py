@@ -104,6 +104,10 @@ class FileManager(object):
     @staticmethod
     def load_file(filename):
         """returns the json object (as ASCII) encoded in file with name filename"""
+        if "cache" in filename:
+            filename = "caches/" + threading.current_thread().name + ".json"
+        elif "outbox" in filename:
+            filename = "outboxes/" + threading.current_thread().name + ".json"
         f = open(filename, 'r')
         j = FileManager._to_ascii(json.load(f, object_hook=FileManager._to_ascii), True)
         f.close()
@@ -126,12 +130,20 @@ class FileManager(object):
     @staticmethod
     def write_json_to_file(obj, filename):
         """JSON encodes (prettily) and writes the passed object obj to file filename, overwriting contents"""
+        if "cache" in filename:
+            filename = "caches/" + threading.current_thread().name + ".json"
+        elif "outbox" in filename:
+            filename = "outboxes/" + threading.current_thread().name + ".json"
         f = open(filename, 'w')
         json.dump(obj, f, indent=4)
         f.close()
 
     @staticmethod
     def write_str_to_file(string, filename):
+        if "cache" in filename:
+            filename = "caches/" + threading.current_thread().name + ".json"
+        elif "outbox" in filename:
+            filename = "outboxes/" + threading.current_thread().name + ".json"
         f = open(filename, 'w')
         f.write(string)
         f.close()
@@ -355,6 +367,12 @@ class Cache(object):
             Cache.JSON_FIELD_JOB_VALUES: values
         }
         FileManager.write_json_to_file(obj, FileManager.FN_CACHE)
+        try:
+            FileManager.load_file("cache.json")
+        except:
+            print("JSON object was written to cache.json incorrectly. Here is the json object it was attempting to write")
+            print(obj)
+     
 
     def get_prev_running_value_state_and_time(self, job, field):
         """
@@ -921,7 +939,7 @@ class Config(object):
             self.bin_duration = Config.JSON_VALUE_BIN_DURATION_DEFAULT
             self.database_url = Config.JSON_VALUE_DATABASE_URL_EMPTY
             self.initial_values = Config.JSON_VALUE_INIT_VALUES_DEFAULT
-            self.collector_address = Config.JSON_VALUE_COLLECTOR_ADDRESS_LOCAL
+            self.collector_addresses = Config.JSON_VALUE_COLLECTOR_ADDRESS_LOCAL
             self.constraint = Config.JSON_VALUE_JOB_CONSTRAINT_DEFAULT
             self.node_renames = Config.JSON_VALUE_BATCH_JOB_SITE_NAME_MAP_DEFAULT
             self.influx_username = Config.JSON_VALUE_INFLUX_USERNAME_DEFAULT
@@ -937,7 +955,7 @@ class Config(object):
                 Config.JSON_FIELD_INFLUX_PASSWORD: self.influx_password
             }
             FileManager.write_json_to_file(obj, FileManager.FN_CONFIG)
-
+        
         # notify and exit if daemon needs configuration
         if self.database_url == Config.JSON_VALUE_DATABASE_URL_EMPTY:
             print ("Please configure the daemon (edit %s) " % FileManager.FN_CONFIG +
@@ -958,15 +976,16 @@ class Config(object):
 
 class Condor(object):
 
-    def __init__(self, config):
+    def __init__(self, config, address):
 
-        addr = config.collector_address
+        addr = address
+        debug_print("Thread {thr} using {addr}".format(thr=threading.current_thread().name, addr=addr))
         if (addr == Config.JSON_VALUE_COLLECTOR_ADDRESS_LOCAL) or (addr.strip() == ""):
             debug_print("Contacting the local collector")
             collector = htcondor.Collector()
         else:
-            debug_print("Contacting a non-local collector (%s)" % config.collector_address)
-            collector = htcondor.Collector(config.collector_address)
+            debug_print("Contacting a non-local collector (%s)" % address)
+            collector = htcondor.Collector(address)
         debug_print("Fetching schedds from collector")
 
         self.schedd_ads = collector.locateAll(htcondor.DaemonTypes.Schedd)
@@ -1310,12 +1329,11 @@ def main():
     metricmngr = MetricManager()
     config = Config()
     for address in config.collector_addresses:
-        config.collector_address = address
-        t = threading.Thread(target=run, args=(metricmngr, config,))
+        t = threading.Thread(target=run, args=(metricmngr, config, address,))
         t.name = address
         t.start()
 
-def run(metricmngr, config):
+def run(metricmngr, config, address):
     print("Starting thread for: {thread}".format(thread=threading.current_thread().name))
     file_name = threading.current_thread().name.split(":")[0]
     log_file = os.path.dirname(os.path.abspath('__file__')) + "/logs/" + file_name + ".log"
@@ -1328,7 +1346,7 @@ def run(metricmngr, config):
     log.addHandler(filehandler)
     
     cache = Cache(config)
-    condor = Condor(config)
+    condor = Condor(config, address)
     outbox = Outbox(config)
 
     # let's exit early (note we're dodging caching) if there's no metrics to collect

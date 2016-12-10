@@ -1,0 +1,27 @@
+{
+    "INITIAL JOB VALUES": {
+        "RemoteSysCpu": [
+            0, 
+            "RUNNING", 
+            "JobStartDate"
+        ], 
+        "RemoteUserCpu": [
+            0, 
+            "RUNNING", 
+            "JobStartDate"
+        ]
+    }, 
+    "INFLUX PASSWORD": "ucsandiego", 
+    "JOB CONSTRAINT": "true", 
+    "COLLECTOR ADDRESSES": [
+        "glidein.grid.iu.edu:9618",
+        "glidein-itb.grid.iu.edu:9614"
+    ],
+    "BIN DURATION": 300, 
+    "DATABASE URL": "http://jmalani.t2.ucsd.edu:8086", 
+    "NODE RENAMES": {
+        "comet.*": "COMET", 
+        "cabinet.*t2\\.ucsd\\.edu": "UCSDT2"
+    }, 
+    "INFLUX USERNAME": "test"
+}
