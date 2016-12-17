@@ -256,6 +256,7 @@ class Outbox(object):
 
         # empty data ruins our formatting
         if not data:
+            debug_print("No data to report")
             return
 
         if db in self.outgoing:
@@ -706,6 +707,9 @@ class Job(object):
             # if it was just running, we know when that started
             if self.was_running():
                 exited = self.last_run_start_time
+                # TODO why does self.last_run_start_time return None instead of False
+                if exited is None:
+                    exited = False
 
             # otherwise, we have no idea!
             else:
@@ -789,6 +793,16 @@ class Job(object):
 
         return entered, exited
 
+    def get_most_recent_time_span_complete(self):
+        # check if job is currently completed
+        if self.is_completed():
+            entered = self.entered_status_time
+            exited = False
+        else:
+            entered = False
+            exited = False
+        return entered, exited
+
     def is_idle_during(self, t0, t1):
         """
         returns whether the job was idle for any time between times t0 and t1, though only considers the
@@ -812,6 +826,18 @@ class Job(object):
 
         # running during [t0, t1] if it ever ran (r0 not False) and doesn't end before or start after
         return r0 and not (r0 >= t1 or r1 <= t0)
+
+    def is_completed_during(self, t0, t1):
+        """
+        returns whether the job was completed any time between times t0 and t1, though only considers
+        the job's most recent time of completion
+        """
+        # k1 is False if the job is still in a completed state
+        k0, k1 = self.get_most_recent_time_span_complete()
+        k1 = k1 if k1 else t1
+        
+        # completed during [t0,t1] if it doesn't end before or start after and it was ever completed
+        return k0 and not (k0 >= t1 or k1 <= t0)
 
     def get_time_idle_in(self, t0, t1):
         """returns the duration (seconds) for which the job is idle within times t0 and t1"""
@@ -1113,7 +1139,7 @@ ad                              - the job's classad, used for grabbing condor va
 job methods...
 
 get_values(fields)              - given a list of classad fields (or mock ads),
-                                  returns {field: value} with the job's corresponding
+                                  returns {field: value} with the job's corresponding                                values
                                   values
 
 is_idle()                       - returns whether the job is currently idle
@@ -1154,6 +1180,12 @@ def count_idle_jobs(self, time_bin, jobs):
 def count_running_jobs(self, time_bin, jobs):
     for job in jobs:
         if job.is_running_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
+
+def count_completed_jobs(self, time_bin, jobs):
+    for job in jobs:
+        if job.is_completed_during(time_bin.start_time, time_bin.end_time):
             time_bin.add_to_sum(1, job.get_values(self.tags))
     return time_bin.get_sum()
 
@@ -1270,9 +1302,13 @@ class IdlePerSubmitMetric:
                     continue
 
             # calculate the metric at each time bin using only filtered jobs
+            debug_print(str(len(bin_times)) + " number of bin times")
             for t in bin_times:
+                debug_print(str(t) + " = t in bin_times")
                 time_bin = Bin(t, t + bin_duration)
+                debug_print("Entering calculate_at_bin")
                 results = metric_inst.calculate_at_bin(time_bin, valid_jobs)
+                debug_print("Exited calculate_at_bin")
                 outbox.add(metric_inst.db, metric_inst.mes, results, time_bin.start_time)
 
             debug_print("At the final bin, metric %s yielded %s" % (metric_inst.mes, prettify(results)))

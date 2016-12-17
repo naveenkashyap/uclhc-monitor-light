@@ -90,7 +90,10 @@ def count_running_jobs(self, time_bin, jobs):
     return time_bin.get_sum()
 
 def count_completed_jobs(self, time_bin, jobs):
-    pass
+    for job in jobs:
+        if job.is_completed_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
 
 def count_held_jobs(self, time_bin, jobs):
     pass
@@ -123,37 +126,22 @@ class AllRunningPilots:
     cache = []
     calculate_at_bin = count_running_jobs
 
-class RunningPilotsPerSite:
+class AllIdlePilots:
     db = "GlideInMetrics"
-    mes = "running_jobs"
-    tags = ["GlideinEntryName"]
+    mes = "idle_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
-    calculate_at_bin = count_running_jobs
+    calculate_at_bin = count_idle_jobs
 
-class RunningPilotsPerFactory:
+class AllCompletedPilots:
     db = "GlideInMetrics"
-    mes = "running_jobs"
-    tags = ["GlideinFactory"]
+    mes = "completed_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
-    calculate_at_bin = count_running_jobs
+    calculate_at_bin = count_completed_jobs
 
-class RunningPilotsPerOwner:
-    db = "GlideInMetrics"
-    mes = "running_jobs"
-    tags = ["Owner"]
-    fields = []
-    cache = []
-    calculate_at_bin = count_running_jobs
-
-class RunningPilotsPerFrontend:
-    db = "GlideInMetrics"
-    mes = "running_jobs"
-    tags = ["GlideinFrontendName"]
-    fields = []
-    cache = []
-    calculate_at_bin = count_running_jobs
 """
 class RunningPerOwnerAndSubmitSiteMetric:
     db = "GlideInMetrics"
