@@ -803,6 +803,33 @@ class Job(object):
             exited = False
         return entered, exited
 
+    def get_most_recent_time_span_held(self):
+        # check if job is currently held
+        if self.is_held():
+            entered = self.entered_status_time
+            exited = False
+
+        # check if job was held (which means it's currently been removed)
+        elif self.was_held():
+
+            # the job was either idle or running before it was held
+            # so get the most recent exit time for one of those
+            _,exited_running = self.get_most_recent_time_span_running()
+            _,exited_idle = self.get_most_recent_time_span_idle()
+
+            if exited_running or exited_idle:
+                entered = max(exited_running, exited_idle)
+            else:
+                entered = False
+
+            exited = self.entered_status_time
+        
+        # else the job was never held
+        else:
+            entered = False
+            exited = False
+        return entered, exited
+
     def is_idle_during(self, t0, t1):
         """
         returns whether the job was idle for any time between times t0 and t1, though only considers the
@@ -838,6 +865,18 @@ class Job(object):
         
         # completed during [t0,t1] if it doesn't end before or start after and it was ever completed
         return k0 and not (k0 >= t1 or k1 <= t0)
+
+    def is_held_during(self, t0, t1):
+        """
+        returns whether the job was held any time between times t0 and t1, though only considers the 
+        job's most recent held time, if it exists
+        """
+        # n1 is False if the job is still in a held state
+        n0, n1 = self.get_most_recent_time_span_held()
+        n1 = n1 if n1 else t1
+  
+        # held during [t0,t1] if it doesnt end before or start after and it was ever held
+        return n0 and not (n0 >= t1 or n1 <= t0)
 
     def get_time_idle_in(self, t0, t1):
         """returns the duration (seconds) for which the job is idle within times t0 and t1"""
@@ -1302,13 +1341,9 @@ class IdlePerSubmitMetric:
                     continue
 
             # calculate the metric at each time bin using only filtered jobs
-            debug_print(str(len(bin_times)) + " number of bin times")
             for t in bin_times:
-                debug_print(str(t) + " = t in bin_times")
                 time_bin = Bin(t, t + bin_duration)
-                debug_print("Entering calculate_at_bin")
                 results = metric_inst.calculate_at_bin(time_bin, valid_jobs)
-                debug_print("Exited calculate_at_bin")
                 outbox.add(metric_inst.db, metric_inst.mes, results, time_bin.start_time)
 
             debug_print("At the final bin, metric %s yielded %s" % (metric_inst.mes, prettify(results)))

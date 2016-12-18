@@ -96,7 +96,10 @@ def count_completed_jobs(self, time_bin, jobs):
     return time_bin.get_sum()
 
 def count_held_jobs(self, time_bin, jobs):
-    pass
+    for job in jobs:
+        if job.is_held_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
 
 
 """
@@ -141,6 +144,14 @@ class AllCompletedPilots:
     fields = []
     cache = []
     calculate_at_bin = count_completed_jobs
+
+class AllHeldPilots:
+    db = "GlideInMetrics"
+    mes = "held_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
+    fields = []
+    cache = []
+    calculate_at_bin = count_held_jobs
 
 """
 class RunningPerOwnerAndSubmitSiteMetric:
