@@ -817,17 +817,26 @@ class Job(object):
             _,exited_running = self.get_most_recent_time_span_running()
             _,exited_idle = self.get_most_recent_time_span_idle()
 
-            if exited_running or exited_idle:
-                entered = max(exited_running, exited_idle)
-            else:
-                entered = False
-
+            entered = max(exited_running, exited_idle)
             exited = self.entered_status_time
         
         # else the job was never held
         else:
             entered = False
             exited = False
+        return entered, exited
+
+    def get_most_recent_time_span_removed(self):
+        # check if job is currently removed
+        if self.is_removed():
+            entered = self.entered_status_time
+            exited = False
+        
+        # else it was never removed
+        else:
+            entered = False
+            exited = False
+        
         return entered, exited
 
     def is_idle_during(self, t0, t1):
@@ -877,6 +886,19 @@ class Job(object):
   
         # held during [t0,t1] if it doesnt end before or start after and it was ever held
         return n0 and not (n0 >= t1 or n1 <= t0)
+
+    def is_removed_during(self, t0, t1):
+        """
+        returns weather the job was removed any time betwen times t0 and t1, if it exists
+        """
+        # j1 is False if the job is still in a removed state
+        # j0 is False if the job never was in a removed state
+        j0,j1 = self.get_most_recent_time_span_removed()
+        j1 = j1 if j1 else t1
+
+        # removed during [t0,t1] if it doesn't end before or start after and it was ever removed
+        return j0 and not (j0 >= t1 or j1 <= t0)
+        
 
     def get_time_idle_in(self, t0, t1):
         """returns the duration (seconds) for which the job is idle within times t0 and t1"""
@@ -1228,6 +1250,17 @@ def count_completed_jobs(self, time_bin, jobs):
             time_bin.add_to_sum(1, job.get_values(self.tags))
     return time_bin.get_sum()
 
+def count_held_jobs(self, time_bin, jobs):
+    for job in jobs:
+        if job.is_held_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
+
+def count_removed_jobs(self, time_bin, jobs):
+    for job in jobs:
+        if job.is_removed_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
 
 """
     attributes:
@@ -1249,37 +1282,46 @@ def count_completed_jobs(self, time_bin, jobs):
                            (it will add them)
 """
 
-class RunningPerSitesMetric:
+class AllRunningPilots:
     db = "GlideInMetrics"
-    mes = "running jobs"
-    tags = ["SUBMIT_SITE", "MATCH_EXP_JOB_Site"]
+    mes = "running_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
     calculate_at_bin = count_running_jobs
 
-class RunningPerOwnerAndSubmitSiteMetric:
+class AllIdlePilots:
     db = "GlideInMetrics"
-    mes = "running jobs"
-    tags = ["SUBMIT_SITE", "Owner"]
-    fields = []
-    cache = []
-    calculate_at_bin = count_running_jobs
-
-class IdlePerOwnerAndSubmitMetric:
-    db = "GlideInMetrics"
-    mes = "idle jobs"
-    tags = ["SUBMIT_SITE", "Owner"]
+    mes = "idle_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
     calculate_at_bin = count_idle_jobs
 
-class IdlePerSubmitMetric:
+class AllCompletedPilots:
     db = "GlideInMetrics"
-    mes = "idle jobs"
-    tags = ["SUBMIT_SITE"]
+    mes = "completed_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
-    calculate_at_bin = count_idle_jobs
+    calculate_at_bin = count_completed_jobs
+
+class AllHeldPilots:
+    db = "GlideInMetrics"
+    mes = "held_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
+    fields = []
+    cache = []
+    calculate_at_bin = count_held_jobs
+
+class AllRemovedPilots:
+    db = "GlideInMetrics"
+    mes = "removed_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
+    fields = []
+    cache = []
+    calculate_at_bin = count_removed_jobs
+
 '''
 
     def __init__(self):
@@ -1322,7 +1364,6 @@ class IdlePerSubmitMetric:
         for metric_class in self.metrics:
 
             metric_inst = metric_class()
-            debug_print("Processing metric: %s %s" % (metric_inst.mes, '(' + ', '.join(metric_inst.tags) + ')'))
 
             # filter for only jobs which contain the fields the metric needs
             valid_jobs = []
@@ -1365,18 +1406,6 @@ def debug_print(msg):
     if DEBUG_PRINT:
         log = logging.getLogger(threading.current_thread().name.split(":")[0])
         log.debug(msg)
-"""
-        try:
-            file_name = threading.current_thread().name.split(":")[0]
-            log_file = os.path.dirname(os.path.abspath('__file__')) + "/logs/" + file_name + ".log"
-            fo = open(log_file, 'a')
-            fo.write(msg+ "\n")
-            fo.close()
-        except IOError as e:
-            print e
-            print "Continuing without logging"
-            set_debug(False)
-"""
 
 def set_debug(b=False):
     if b is not False:

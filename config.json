@@ -15,7 +15,8 @@
     "JOB CONSTRAINT": "true", 
     "COLLECTOR ADDRESSES": [
         "glidein.grid.iu.edu:9618",
-        "glidein-itb.grid.iu.edu:9614"
+        "glidein-itb.grid.iu.edu:9614",
+        "gfactory-1.t2.ucsd.edu:9614"
     ],
     "BIN DURATION": 300, 
     "DATABASE URL": "http://jmalani.t2.ucsd.edu:8086", 

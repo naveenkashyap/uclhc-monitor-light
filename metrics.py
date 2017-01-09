@@ -101,6 +101,11 @@ def count_held_jobs(self, time_bin, jobs):
             time_bin.add_to_sum(1, job.get_values(self.tags))
     return time_bin.get_sum()
 
+def count_removed_jobs(self, time_bin, jobs):
+    for job in jobs:
+        if job.is_removed_during(time_bin.start_time, time_bin.end_time):
+            time_bin.add_to_sum(1, job.get_values(self.tags))
+    return time_bin.get_sum()
 
 """
     attributes:
@@ -153,30 +158,10 @@ class AllHeldPilots:
     cache = []
     calculate_at_bin = count_held_jobs
 
-"""
-class RunningPerOwnerAndSubmitSiteMetric:
+class AllRemovedPilots:
     db = "GlideInMetrics"
-    mes = "running jobs"
-    tags = ["SUBMIT_SITE", "Owner"]
+    mes = "removed_jobs"
+    tags = ["GlideinEntryName", "GlideinFactory", "Owner", "GlideinFrontendName"]
     fields = []
     cache = []
-    calculate_at_bin = count_running_jobs
-
-class IdlePerOwnerAndSubmitMetric:
-    db = "GlideInMetrics"
-    mes = "idle jobs"
-    tags = ["SUBMIT_SITE", "Owner"]
-    fields = []
-    cache = []
-    calculate_at_bin = count_idle_jobs
-
-class IdlePerSubmitMetric:
-    db = "GlideInMetrics"
-    mes = "idle jobs"
-    tags = ["SUBMIT_SITE"]
-    fields = []
-    cache = []
-    calculate_at_bin = count_idle_jobs
-
-class Idle
-"""
+    calculate_at_bin = count_removed_jobs
