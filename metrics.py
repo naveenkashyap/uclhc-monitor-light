@@ -1,8 +1,10 @@
 
 #!/usr/bin/env python
 
-# Author:       Tyson Jones, January 2016 (MURPA student of Prof Frank Wuerthwein, UCSD).
+# Authors:      Tyson Jones, January 2016 (MURPA student of Prof Frank Wuerthwein, UCSD).
 #               Feel free to contact me at  tjon14@student.monash.edu
+#		Naveen Kashyap, 2016.
+#		Contact: nkashyap@ucsd.edu
 
 # Purpose:      user specified metrics for the condorflux system
 

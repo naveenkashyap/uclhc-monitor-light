@@ -1,0 +1,6 @@
+Glidein Lifetime = "remotewallclocktime"
+3) handle logrotate
+3.5) make monitor.sh a service -> "service monitor start"
+4) organize directory
+5) Makefile
+6) package (rpm)

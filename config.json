@@ -11,18 +11,14 @@
             "JobStartDate"
         ]
     }, 
-    "INFLUX PASSWORD": "ucsandiego", 
+    "INFLUX PASSWORD": "Enter Influx Password", 
     "JOB CONSTRAINT": "true", 
-    "COLLECTOR ADDRESSES": [
-        "glidein.grid.iu.edu:9618",
-        "glidein-itb.grid.iu.edu:9614",
-        "gfactory-1.t2.ucsd.edu:9614"
-    ],
-    "BIN DURATION": 300, 
-    "DATABASE URL": "http://jmalani.t2.ucsd.edu:8086", 
+    "COLLECTOR ADDRESSES": [ ],
+    "BIN DURATION": 300,
+    "DATABASE URL": "Enter Database URL",
     "NODE RENAMES": {
         "comet.*": "COMET", 
         "cabinet.*t2\\.ucsd\\.edu": "UCSDT2"
     }, 
-    "INFLUX USERNAME": "test"
+    "INFLUX USERNAME": "Enter Influx Username"
 }

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+while [ 1 ]
+do
+# call daemon script 
+# switch UID (su <naveen>)
+date >> /var/lib/factory-monitor/monitor_output.txt
+python /var/lib/factory-monitor/monitor.py >> /var/lib/factory-monitor/monitor_output.txt
+sleep 15m
+done
+
+exit 0 
