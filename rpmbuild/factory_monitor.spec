@@ -19,4 +19,17 @@ influxdb, which is then read and visualized by a Grafana server
 %build
 
 %install
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/var/lib/factory-monitor
+mkdir -p %{buildroot}/var/lib/factory-monitor/outboxes
+mkdir -p %{buildroot}/var/cache/factory-monitor
+mkdir -p %{buildroot}/var/log/factory-monitor
 
+install -m 777 factory-monitor %{buildroot}/etc/init.d
+install -m 777  factory-monitord %{buildroot}/usr/sbin
+install -m 777 monitor.py %{buildroot}/var/lib/factory-monitor
+install -m 777 config.json %{buildroot}/var/lib/factory-monitor
+install -m 777 metrics.py %{buildroot}/var/lib/factory-monitor
+
+%clean
+rm -rf %{buildroot}
