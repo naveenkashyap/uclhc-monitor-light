@@ -31,5 +31,10 @@ install -m 777 monitor.py %{buildroot}/var/lib/factory-monitor
 install -m 777 config.json %{buildroot}/var/lib/factory-monitor
 install -m 777 metrics.py %{buildroot}/var/lib/factory-monitor
 
+%postun
+if [ "$1" = "0" ] ; then #Remove package
+  rm -rf /var/lib/factory-monitor
+fi
+
 %clean
 rm -rf %{buildroot}
