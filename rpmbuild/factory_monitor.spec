@@ -18,6 +18,13 @@ Requires: python
 This python-based program uses bindings to the Condor Batch system to store data into
 influxdb, which is then read and visualized by a Grafana server
 
+%pre
+getent group factmon >/dev/null || groupadd -r GROUPNAME
+getent passwd factmon >/dev/null || \
+    useradd -r -g factmon -d HOMEDIR -s /sbin/nologin \
+    -c "this user is created to allow for selective use of the service" factmon
+exit 0
+
 %prep
 %setup -q
 
