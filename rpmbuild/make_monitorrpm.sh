@@ -13,6 +13,7 @@ cp $ROOT_DIR/factory-monitord $TMP_DIR
 cp $ROOT_DIR/monitor.py $TMP_DIR
 cp $ROOT_DIR/config.json $TMP_DIR
 cp $ROOT_DIR/metrics.py $TMP_DIR
+cp factory_monitor.spec $TMP_DIR
 
 tar -czvf ${NAME}-${VERSION}.tgz ${NAME}-${VERSION}/
 

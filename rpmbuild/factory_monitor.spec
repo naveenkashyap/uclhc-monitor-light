@@ -6,8 +6,13 @@ Name:           %{name}
 Version:        %{ver}
 Release:        %{rel}
 Summary: Visualizes Condor Factory meta data in Grafana
+License: Apache 2.0
 
-Requires: influxdb grafana-server
+Source0:	%{name}-%{version}.tgz
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+BuildArch:  noarch
+
+Requires: python
 
 %description
 This python-based program uses bindings to the Condor Batch system to store data into
@@ -24,6 +29,8 @@ mkdir -p %{buildroot}/var/lib/factory-monitor
 mkdir -p %{buildroot}/var/lib/factory-monitor/outboxes
 mkdir -p %{buildroot}/var/cache/factory-monitor
 mkdir -p %{buildroot}/var/log/factory-monitor
+mkdir -p %{buildroot}/etc/init.d
+mkdir -p %{buildroot}/usr/sbin
 
 install -m 777 factory-monitor %{buildroot}/etc/init.d
 install -m 777  factory-monitord %{buildroot}/usr/sbin
@@ -38,3 +45,11 @@ fi
 
 %clean
 rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+/etc/init.d/factory-monitor
+/usr/sbin/factory-monitord
+%config(noreplace) /var/lib/factory-monitor/config.json
+%config(noreplace) /var/lib/factory-monitor/metrics.py*
+/var/lib/factory-monitor/monitor.py*
