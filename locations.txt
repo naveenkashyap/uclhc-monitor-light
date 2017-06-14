@@ -1,3 +1,3 @@
 factory-monitor (/etc/init.d) calls factory-monitord (/usr/sbin) calls monitor.py (/var/lib/factory-monitor).
 monitor.py relies on caches (/var/cache/factory-monitor), logs (/var/log/factory-monitor), and outboxes (/var/lib/factory-monitor)
-monitor.py uses config.json (/var/lib/factory-monitor) and metrics.py (/var/lib/factory-monitor)
+monitor.py uses config.json (/etc/factory-monitor) and metrics.py (/etc/factory-monitor)

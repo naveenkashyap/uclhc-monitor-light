@@ -23,8 +23,8 @@ DEBUG_PRINT = True
 BASE_PATH_CACHE = "/var/cache/factory-monitor/"
 BASE_PATH_LOG = "/var/log/factory-monitor/"
 BASE_PATH_OUTBOX = "/var/lib/factory-monitor/outboxes/"
-BASE_PATH_CONFIG = "/var/lib/factory-monitor/"
-BASE_PATH_METRIC = "/var/lib/factory-monitor/"
+BASE_PATH_CONFIG = "/etc/factory-monitor/" # "/var/lib/factory-monitor/"
+BASE_PATH_METRIC = "/etc/factory-monitor/" # "/var/lib/factory-monitor/"
 
 
 class MockAd(object):
