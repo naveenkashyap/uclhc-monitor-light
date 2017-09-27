@@ -24,7 +24,7 @@ BASE_PATH_CACHE = "/var/cache/factory-monitor/"
 BASE_PATH_LOG = "/var/log/factory-monitor/"
 BASE_PATH_OUTBOX = "/var/lib/factory-monitor/outboxes/"
 BASE_PATH_CONFIG = "/etc/factory-monitor/" # "/var/lib/factory-monitor/"
-BASE_PATH_METRIC = "/etc/factory-monitor/" # "/var/lib/factory-monitor/"
+# BASE_PATH_METRIC = "/etc/factory-monitor/" # "/var/lib/factory-monitor/"
 
 
 class MockAd(object):
@@ -104,8 +104,8 @@ class Ad(object):
 class FileManager(object):
     """manages the parsing and writing to of all files used by the daemon"""
     FN_CONFIG = BASE_PATH_CONFIG + "config.json"
-    FN_CACHE = "cache.json"
-    FN_OUTBOX = "outbox.json"
+    FN_CACHE = BASE_PATH_CACHE + "cache.json"
+    FN_OUTBOX = BASE_PATH_OUTBOX + "outbox.json"
     FN_METRICS = "metrics.py"
 
     @staticmethod
@@ -1338,7 +1338,7 @@ class AllRemovedPilots:
         # try to load metrics from file
         try:
             sys.dont_write_bytecode = True
-            module_name = FileManager.FN_METRICS.split('.')[0]
+            module_name = FileManager.FN_METRICS.split('.')[0] # TODO: find a different way of importing metrics module
             metrics = __import__(module_name)
 
             # grab all classes declared in the metrics file

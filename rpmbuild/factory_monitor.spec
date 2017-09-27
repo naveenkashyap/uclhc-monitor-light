@@ -41,10 +41,10 @@ mkdir -p %{buildroot}/etc/init.d
 mkdir -p %{buildroot}/usr/sbin
 
 install -m 777 factory-monitor %{buildroot}/etc/init.d
-install -m 777  factory-monitord %{buildroot}/usr/sbin
+install -m 777 factory-monitord %{buildroot}/usr/sbin
 install -m 777 monitor.py %{buildroot}/var/lib/factory-monitor
+install -m 777 metrics.py %{buildroot}/var/lib/factory-monitor
 install -m 777 config.json %{buildroot}/etc/factory-monitor
-install -m 777 metrics.py %{buildroot}/etc/factory-monitor
 
 %postun
 if [ "$1" = "0" ] ; then #Remove package
@@ -59,5 +59,10 @@ rm -rf %{buildroot}
 /etc/init.d/factory-monitor
 /usr/sbin/factory-monitord
 %config(noreplace) /etc/factory-monitor/config.json
-%config(noreplace) /etc/factory-monitor/metrics.py*
+%config(noreplace) /var/lib/factory-monitor/metrics.py*
 /var/lib/factory-monitor/monitor.py*
+
+%dir /var/log/factory-monitor
+%dir /var/cache/factory-monitor
+%dir /var/lib/factory-monitor/outboxes
+
